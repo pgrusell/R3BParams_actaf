@@ -23,6 +23,8 @@ void actaf_online(TString filename = "--stream=pcamtpc04:9003", const Int_t fRun
     FairLogger::GetLogger()->SetLogScreenLevel("info");
     FairLogger::GetLogger()->SetColoredLog(true);
 
+    filename = "/nucl_lustre/amber/lmd_2025/amber-TPC-0960_stitched.lmd";
+    // filename="/nucl_lustre/amber/lmd_2025/amber-TPC-0811_stitched.lmd";
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     std::ostringstream oss;
@@ -91,15 +93,15 @@ void actaf_online(TString filename = "--stream=pcamtpc04:9003", const Int_t fRun
 
         auto actafreader =
             new R3BActafReader((EXT_STR_h101_ACTAF2025_onion*)&ucesb_struct.actaf, offsetof(EXT_STR_h101, actaf));
-        actafreader->SetOnline();
+        actafreader->SetOnline(false);
         source->AddReader(actafreader);
 
-        
-	std::vector<UInt_t> wrIds {100, 200, 300, 400, 500, 600, 700, 800, 900};
-	
-	auto actafwrreader = new R3BWhiterabbitActafReader((EXT_STR_h101_WRACTAF_onion*)&ucesb_struct.actafwr, offsetof(EXT_STR_h101, actafwr), wrIds);
-	actafwrreader->SetOnline();
-	source->AddReader(actafwrreader);
+        std::vector<UInt_t> wrIds{ 100, 200, 300, 400, 500, 600, 700, 800, 900 };
+
+        auto actafwrreader = new R3BWhiterabbitActafReader(
+            (EXT_STR_h101_WRACTAF_onion*)&ucesb_struct.actafwr, offsetof(EXT_STR_h101, actafwr), wrIds);
+        actafwrreader->SetOnline();
+        source->AddReader(actafwrreader);
     }
 
     run->SetSource(source);
@@ -118,7 +120,7 @@ void actaf_online(TString filename = "--stream=pcamtpc04:9003", const Int_t fRun
 
     auto* parListAscii = new TList();
     parListAscii->Add(new TObjString(pardir + "/actaf/actaf_mapping_v3.par"));
-    parListAscii->Add(new TObjString(pardir + "/actaf/actafcal_v1.par"));
+    parListAscii->Add(new TObjString(pardir + "/actaf/actafcal_v2.par"));
     parAscii->open(parListAscii);
     rtdb->setSecondInput(parAscii);
     rtdb->print();
@@ -127,11 +129,13 @@ void actaf_online(TString filename = "--stream=pcamtpc04:9003", const Int_t fRun
     auto* actafmap2cal = new R3BActafMapped2Cal();
     // actafmap2cal->SetTimeConversion(51.44); // ns/bin
     // actafmap2cal->SetVelocity(0.28); // cm/ns
-    actafmap2cal->SetOnline();
+    // actafmap2cal->SetDisplayTraces(false);
+    // actafmap2cal->SetPulserChannel(62);
+    actafmap2cal->SetOnline(false);
     run->AddTask(actafmap2cal);
 
     auto* actafcal2hit = new R3BActafCal2Hit();
-    actafcal2hit->SetOnline();
+    actafcal2hit->SetOnline(false);
     run->AddTask(actafcal2hit);
 
     auto* actafonline = new R3BActafOnlineSpectra();
